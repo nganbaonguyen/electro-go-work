@@ -32,3 +32,18 @@ src/
 - Không gõ màu/số trong component, lấy từ `shared/theme.ts`. Ảnh lấy từ `assets/images`, tên icon lấy từ `assets/icons.ts`.
 - Có backend thật thì đổi `useMock` thành `false` trong `config/env.ts` và sửa `apiBaseUrl`.
 - Thêm màn hình: thêm vào `Route` và `TITLES` trong `MiniNavigator.tsx`.
+
+## Chạy và build (Module Federation / Re.Pack)
+
+Mini app là **remote**: host nạp động lúc người dùng bấm ô trên Home, không nằm sẵn trong bundle của host.
+
+| Việc | Lệnh | Ghi chú |
+|---|---|---|
+| Chạy dev | `pnpm start:module` | Server Re.Pack cổng 9001; host đọc `http://localhost:9001/<platform>/mf-manifest.json` |
+| Build triển khai | `pnpm build` | Ra `build/<tên>-<version>.tar` chứa bundle iOS + Android (container, manifest, chunk, assets) |
+| Tar mã nguồn | `pnpm build:src` | Ra `build/<tên>-<version>.tar` chứa `src/` (không phải bundle) |
+
+Dùng cùng host: mở 2 terminal, một ở host chạy `pnpm start:dev`, một ở package này chạy `pnpm start:module`, rồi bấm ô Chấm công trên Home.
+
+Cấu hình nằm ở `rspack.config.mjs`: `exposes: {'./App': './src/index.tsx'}` (cái host nạp), `shared` (react, react-native, safe-area-context dùng bản của host), `filename` của container.
+`dev/` chỉ dùng khi chạy riêng, không nằm trong gói build.

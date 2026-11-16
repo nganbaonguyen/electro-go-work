@@ -4,7 +4,9 @@
   "private": true,
   "main": "src/index.tsx",
   "scripts": {
-    "build": "bash scripts/build-tar.sh"
+    "build": "bash scripts/build-bundle.sh",
+    "build:src": "bash scripts/build-tar.sh",
+    "start:module": "PORT=9001 bash scripts/start-module.sh"
   },
   "files": [
     "src",
@@ -13,6 +15,7 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "@react-native-vector-icons/ionicons": "*"
+    "@react-native-vector-icons/ionicons": "*",
+    "react-native-safe-area-context": "*"
   }
 }
