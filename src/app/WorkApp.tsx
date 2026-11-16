@@ -1,10 +1,12 @@
 import React from 'react';
-import {AttendanceScreen} from '../features/attendance';
+import ErrorBoundary from '../shared/components/ErrorBoundary';
+import MiniNavigator from './navigation/MiniNavigator';
 
-/**
- * Component gốc của mini app Chấm công.
- * Khi cần nhiều màn hình, đặt navigator của mini app ở đây.
- */
+/** Component gốc của mini app Chấm công: bọc ErrorBoundary rồi vào điều hướng nội bộ. */
 export default function WorkApp() {
-  return <AttendanceScreen />;
+  return (
+    <ErrorBoundary>
+      <MiniNavigator />
+    </ErrorBoundary>
+  );
 }

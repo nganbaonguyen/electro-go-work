@@ -4,3 +4,5 @@ export type AttendanceRecord = {
   checkIn: string; // HH:mm
   checkOut?: string; // HH:mm, rỗng nếu chưa chấm công ra
 };
+
+export type CheckType = 'in' | 'out';

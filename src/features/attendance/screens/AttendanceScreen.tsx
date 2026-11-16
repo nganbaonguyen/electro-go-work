@@ -1,28 +1,33 @@
-import React, {useState} from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import React from 'react';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import StateView from '../../../shared/components/StateView';
 import {colors, spacing, typography} from '../../../shared/theme';
 import CheckInButton from '../components/CheckInButton';
 import HistoryList from '../components/HistoryList';
-import {MOCK_HISTORY} from '../data/mockHistory';
+import {useCheckIn} from '../hooks/useCheckIn';
+import {useHistory} from '../hooks/useHistory';
 import {formatClock, formatDate, formatTime, useNow} from '../hooks/useNow';
 
-export default function AttendanceScreen() {
-  const now = useNow();
-  const [checkedInAt, setCheckedInAt] = useState<Date | null>(null);
+type Props = {onOpenHistory: () => void};
 
-  const onToggle = () => setCheckedInAt(prev => (prev ? null : new Date()));
+export default function AttendanceScreen({onOpenHistory}: Props) {
+  const now = useNow();
+  const {checkedInAt, submitting, toggle} = useCheckIn();
+  const history = useHistory(3);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Chấm công</Text>
-
+    <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.clockBox}>
         <Text style={styles.clock}>{formatClock(now)}</Text>
         <Text style={styles.date}>{formatDate(now)}</Text>
       </View>
 
       <View style={styles.buttonBox}>
-        <CheckInButton checkedIn={checkedInAt !== null} onPress={onToggle} />
+        <CheckInButton
+          checkedIn={checkedInAt !== null}
+          disabled={submitting}
+          onPress={toggle}
+        />
         <Text style={styles.status}>
           {checkedInAt
             ? `Đã vào ca lúc ${formatTime(checkedInAt)}`
@@ -30,20 +35,39 @@ export default function AttendanceScreen() {
         </Text>
       </View>
 
-      <Text style={styles.section}>Lịch sử gần đây</Text>
-      <HistoryList records={MOCK_HISTORY} />
+      <View style={styles.sectionRow}>
+        <Text style={styles.section}>Lịch sử gần đây</Text>
+        <Pressable onPress={onOpenHistory} hitSlop={8} accessibilityRole="button">
+          <Text style={styles.link}>Xem tất cả</Text>
+        </Pressable>
+      </View>
+
+      {history.status === 'ready' && history.data ? (
+        <HistoryList records={history.data} />
+      ) : (
+        <StateView
+          status={history.status === 'error' ? 'error' : 'loading'}
+          message={history.error}
+          onRetry={history.reload}
+        />
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
   content: {padding: spacing.xl},
-  title: {...typography.headline, color: colors.textPrimary},
-  clockBox: {alignItems: 'center', marginTop: spacing.xxl},
+  clockBox: {alignItems: 'center', marginTop: spacing.lg},
   clock: {fontSize: 44, fontWeight: '700', color: colors.primary},
   date: {...typography.body, color: colors.textSecondary, marginTop: spacing.xs},
   buttonBox: {alignItems: 'center', marginVertical: spacing.xxl},
   status: {...typography.body, color: colors.textSecondary, marginTop: spacing.lg},
-  section: {...typography.title, color: colors.textPrimary, marginBottom: spacing.md},
+  sectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  section: {...typography.title, color: colors.textPrimary},
+  link: {...typography.body, color: colors.primaryLight, fontWeight: '600'},
 });
