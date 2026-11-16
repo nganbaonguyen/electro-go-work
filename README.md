@@ -25,6 +25,23 @@ src/
 └── shared/                    theme, components, hooks (useAsync), navigation (useStack), utils
 ```
 
+## Chức năng (màn hình trung tâm `hub`)
+
+Màn gốc là lưới icon 4 cột; mỗi icon mở một màn hình riêng, mỗi chức năng là một feature trong `src/features/`:
+
+| Icon | Chức năng | Feature | Giao diện |
+|---|---|---|---|
+| Chấm công | Chấm công vào/ra, lịch sử | `attendance` | Đồng hồ, nút vân tay tròn, danh sách lịch sử |
+| Lịch làm việc | Ca làm trong tuần | `schedule` | Dải 7 ngày chọn ngày, thẻ ca có vạch màu theo loại ca |
+| Nghỉ phép | Số ngày phép và đơn xin nghỉ | `leave` | Thẻ số dư + thanh tiến độ, đơn kèm nhãn trạng thái |
+| Phiếu lương | Lương từng tháng | `payslip` | Chọn tháng, thẻ "Thực nhận", các khoản cộng/trừ |
+
+Thêm chức năng mới: tạo `src/features/<tên>/` (types, data, services, hooks, screens, components, index.ts), thêm khóa vào `ModuleKey` và một dòng vào `MODULES` trong `features/hub`, rồi thêm route, tiêu đề và nhánh render trong `app/navigation/MiniNavigator.tsx`.
+
+## Mở thẳng một chức năng từ host
+
+Component gốc nhận prop `initialRoute` (trùng `ModuleKey` trong `features/hub`). Host truyền prop này khi người dùng bấm một icon chức năng ngay trên Trang chủ, nên mini app mở thẳng màn hình đó; không truyền hoặc không hợp lệ thì mở màn hình trung tâm (hub).
+
 ## Quy ước
 
 - Luồng dữ liệu một chiều: **screen -> hook -> service -> (mock | http)**. Màn hình không gọi `http` trực tiếp.

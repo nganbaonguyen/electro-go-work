@@ -15,6 +15,11 @@ export const colors = {
   textSecondary: '#6B7280',
   textOnPrimary: '#FFFFFF',
   divider: '#E5E7EB',
+  iconTile: '#E3EDFF', // nền xanh nhạt chung cho mọi ô icon (giống host)
+  successBg: '#DCFCE7',
+  warningBg: '#FEF3C7',
+  dangerBg: '#FEE2E2',
+  warning: '#B45309',
 };
 
 export const spacing = {xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28};
