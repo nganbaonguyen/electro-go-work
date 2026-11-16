@@ -1,8 +1,15 @@
 {
   "name": "@electrogo/work",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
+  "scripts": {
+    "build": "bash scripts/build-tar.sh"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
