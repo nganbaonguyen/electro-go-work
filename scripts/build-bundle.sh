@@ -25,6 +25,25 @@ if [ ! -f "$HOST_DIR/react-native.config.js" ]; then
   exit 1
 fi
 
+# Tăng số bản build thêm 1. Số lưu ở .build-info.json và ĐƯỢC đưa lên git, nên các máy dùng chung một bộ đếm:
+# lấy số lớn hơn giữa máy này và bản mới nhất trên GitHub (nếu có mạng) rồi cộng 1. Số hiện ở cuối màn hình
+# trung tâm của mini app để biết app đã nạp đúng gói tar vừa upload chưa. Sau khi build nhớ commit + push file này
+# để máy khác thấy. Đặt lại về 0: xóa file .build-info.json (cả trên GitHub).
+INFO="$PKG_DIR/.build-info.json"
+read_number() { node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).number||0)}catch{console.log(0)}})'; }
+PREV="$(read_number < "$INFO" 2>/dev/null || echo 0)"
+if git -C "$PKG_DIR" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+  GIT_TERMINAL_PROMPT=0 git -C "$PKG_DIR" fetch -q 2>/dev/null || echo "    (không lấy được số build từ GitHub, dùng số của máy này)"
+  REMOTE="$(git -C "$PKG_DIR" show '@{u}:.build-info.json' 2>/dev/null | read_number || echo 0)"
+  if [ "${REMOTE:-0}" -gt "$PREV" ]; then
+    echo "    Số build trên GitHub (#$REMOTE) lớn hơn máy này (#$PREV), tiếp tục từ #$REMOTE"
+    PREV="$REMOTE"
+  fi
+fi
+BUILD_NUMBER=$((PREV + 1))
+printf '{"number": %s, "builtAt": "%s"}\n' "$BUILD_NUMBER" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$INFO"
+echo "==> Bản build #$BUILD_NUMBER"
+
 rm -rf "$OUT"
 mkdir -p "$STAGE/$NAME"
 
@@ -52,5 +71,6 @@ COPYFILE_DISABLE=1 tar -cf "$TAR" -C "$STAGE" "$NAME"
 rm -rf "$STAGE" "$OUT/.tmp" "$OUT"/.build-*.log
 
 echo ""
-echo "Đã build: build/${NAME}-${VERSION}.tar"
+echo "Đã build: build/${NAME}-${VERSION}.tar (bản build #$BUILD_NUMBER)"
+echo "Nhớ commit + push .build-info.json để máy khác tiếp tục đếm từ #$BUILD_NUMBER."
 ls -lh "$TAR"

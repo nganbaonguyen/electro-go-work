@@ -1,7 +1,23 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import * as Repack from '@callstack/repack';
+import rspack from '@rspack/core';
 
 const __dirname = Repack.getDirname(import.meta.url);
+
+/**
+ * Số bản build: scripts/build-bundle.sh tăng số trong .build-info.json (đưa lên git để các máy dùng chung số) mỗi lần `pnpm build`,
+ * rồi chèn vào bundle dưới tên __BUILD_INFO__ để màn hình trung tâm hiện "Bản build #N".
+ */
+function readBuildInfo() {
+  // version: lấy từ package.json (cùng biến VERSION trong scripts/build-bundle.sh) để hiện "Phiên bản bundle <version>"
+  const {version} = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+  try {
+    return {...JSON.parse(fs.readFileSync(path.join(__dirname, '.build-info.json'), 'utf8')), version};
+  } catch {
+    return {number: 0, builtAt: '', version};
+  }
+}
 
 /**
  * Cấu hình Re.Pack của mini app Chấm công: đóng vai trò REMOTE của Module Federation.
@@ -36,6 +52,7 @@ export default Repack.defineRspackConfig(env => {
     },
     plugins: [
       new Repack.RepackPlugin(),
+      new rspack.DefinePlugin({__BUILD_INFO__: JSON.stringify(readBuildInfo())}),
       new Repack.plugins.ModuleFederationPluginV2({
         name: 'work',
         // Tên file container khác index.bundle (file entry) để không bị trùng

@@ -11,4 +11,5 @@ export const icons = {
   add: 'add-circle-outline',
   next: 'chevron-forward',
   error: 'alert-circle-outline',
+  bundle: 'cube-outline',
 } as const;
