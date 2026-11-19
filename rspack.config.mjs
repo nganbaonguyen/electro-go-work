@@ -19,6 +19,33 @@ function readBuildInfo() {
   }
 }
 
+// Thư viện dùng chung {tên: version}: đọc federation.shared của host; không có host thì dùng bản sao trong package.json của mini app.
+function readSharedVersions() {
+  const own = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8')).federation?.shared ?? {};
+  let host;
+  try {
+    host = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8'));
+  } catch {
+    return own;
+  }
+  if (!host.federation?.shared) {
+    return own;
+  }
+  const fromHost = Object.fromEntries(host.federation.shared.map(name => [name, host.dependencies?.[name] ?? '*']));
+  const drift = [...new Set([...Object.keys(own), ...Object.keys(fromHost)])].filter(name => own[name] !== fromHost[name]);
+  if (drift.length > 0) {
+    console.warn(
+      `[federation] bản sao trong package.json của mini app lệch host: ${drift
+        .map(name => `${name} (mini app ${own[name] ?? 'thiếu'}, host ${fromHost[name] ?? 'thiếu'})`)
+        .join(', ')}. Hãy cập nhật "federation.shared" trong package.json của mini app.`,
+    );
+  }
+  return fromHost;
+}
+
+// SOLO=1 (pnpm solo): chạy riêng như app React Native thường, không dùng Module Federation (không có host khởi tạo container).
+const solo = process.env.SOLO === '1';
+
 /**
  * Cấu hình Re.Pack của mini app Chấm công: đóng vai trò REMOTE của Module Federation.
  *   - Expose './App' (component gốc) để host nạp động bằng import('work/App').
@@ -27,10 +54,10 @@ function readBuildInfo() {
  *   - entry `./dev/index.js` chỉ dùng khi chạy riêng (khung Harness), host không chạy file này.
  */
 const shared = Object.fromEntries(
-  ['react', 'react-native', 'react-native-safe-area-context'].map(name => [
+  Object.entries(readSharedVersions()).map(([name, requiredVersion]) => [
     name,
     // import: false = không đóng gói bản dự phòng, luôn dùng bản của host (nhẹ hơn nhiều)
-    {singleton: true, eager: false, requiredVersion: '*', import: false},
+    {singleton: true, eager: false, requiredVersion, import: false},
   ]),
 );
 
@@ -53,14 +80,18 @@ export default Repack.defineRspackConfig(env => {
     plugins: [
       new Repack.RepackPlugin(),
       new rspack.DefinePlugin({__BUILD_INFO__: JSON.stringify(readBuildInfo())}),
-      new Repack.plugins.ModuleFederationPluginV2({
-        name: 'work',
-        // Tên file container khác index.bundle (file entry) để không bị trùng
-        filename: 'work.container.js.bundle',
-        dts: false,
-        exposes: {'./App': './src/index.tsx'},
-        shared,
-      }),
+      ...(solo
+        ? []
+        : [
+            new Repack.plugins.ModuleFederationPluginV2({
+              name: 'work',
+              // Tên file container khác index.bundle (file entry) để không bị trùng
+              filename: 'work.container.js.bundle',
+              dts: false,
+              exposes: {'./App': './src/index.tsx'},
+              shared,
+            }),
+          ]),
     ],
   };
 });
